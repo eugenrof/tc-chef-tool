@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TC Chef | AI-Powered Test Case Generator</title>
+
+  <meta name="title" content="TC Chef | AI-Powered Test Case Generator">
+  <meta name="description" content="Transform raw User Stories and Acceptance Criteria into gourmet Test Cases. Freshly baked QA documentation, cooked to order.">
+  <meta name="theme-color" content="#3b82f6">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://your-tc-chef-url.com/"> <meta property="og:title" content="TC Chef - Gourmet Test Case Generation">
+  <meta property="og:description" content="The AI Sous-Chef that turns requirements into high-precision test cases instantly.">
+  <meta property="og:image" content="/assets/tc_chef-D0fAwkN2.png">
+
+  <link rel="icon" type="image/png" href="/assets/tc_chef_logo-D0azMVwJ.png">
+
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script type="module" crossorigin src="/assets/index-BotFRDY8.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Ck2TFMHy.css">
+</head>
+<body>
+<div id="app">
+  <header class="chef-header">
+    <div class="header-brand">
+      <img src="/assets/tc_chef_logo-D0azMVwJ.png" alt="TC Chef Logo" class="header-logo">
+      <h2 class="lobster-font">TC Chef</h2>
+    </div>
+    <button id="themeToggle">🌙 Dark Mode</button>
+  </header>
+
+  <div class="app-description">
+    <p><em>Generate test cases based on User Stories & AC</em></p>
+  </div>
+
+  <div class="settings-container">
+    <div class="settings-header">
+      <label>Gemini API Configuration</label>
+      <div class="tooltip-trigger" data-tooltip="The shared key is limited to 20 req/day. For unlimited use, get your own free key at aistudio.google.com. Keys are stored safely in your browser's local storage.">
+        ⓘ
+      </div>
+    </div>
+
+    <div class="api-input-group">
+      <div style="position: relative; flex: 1; display: flex; align-items: center;">
+        <input type="password" id="userApiKey" placeholder="Paste your Gemini API key here..." style="padding-right: 40px; width: 100%;">
+
+        <div id="toggleVisibility" title="Show/Hide API Key"
+             style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; color: var(--sub-text); transition: color 0.2s; user-select: none;">
+          <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+      </div>
+
+      <button id="saveKeyBtn" class="secondary-btn">Save Key</button>
+    </div>
+    <p id="keyStatus"></p>
+  </div>
+
+  <section class="workspace">
+    <div class="workspace-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; gap: 10px;">
+      <div>
+        <h3 style="margin: 0; font-size: 1.1rem;">Input User Story</h3>
+        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--sub-text);">Season with Acceptance Criteria for perfectly cooked results.</p>
+      </div>
+
+      <button id="copyBtn" class="secondary-btn icon-only" title="Copy User Story to Clipboard" aria-label="Copy to Clipboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+    </div>
+
+    <textarea id="storyInput" maxlength="2500" placeholder="Provide a User Story and Acceptance Criteria. Fresh test cases, cooked to order!"></textarea>
+
+    <div id="wordCounter" style="text-align: right; font-size: 0.8rem; color: var(--sub-text); margin-top: 8px;">0 / 2500</div>
+
+    <div class="controls">
+      <button id="generateBtn">Cook Test Cases</button>
+      <button id="resetBtn">Clear Prep Table</button>
+      <button id="downloadBtn" disabled title="Generate cases first to enable download">Download CSV</button>
+    </div>
+  </section>
+
+  <div id="resultsTable"></div>
+
+  <footer class="tips-section">
+    <hr class="footer-divider" style="border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+    <details>
+      <summary>
+        💡 View Pro Tips & API Instructions
+      </summary>
+      <div class="tips-content" style="padding: 1rem; font-size: 0.9rem; line-height: 1.6;">
+        <ul style="margin: 0; padding-left: 1.2rem;">
+          <li><strong>Daily Specials:</strong> Shared keys serve 20 orders/day. Bring your own key for a 1,500 req/day feast.</li>
+          <li><strong>Chef's License:</strong> Grab your own free API key at <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.</li>
+          <li><strong>Secret Recipe:</strong> Your keys are stored safely in your own browser's pantry (LocalStorage).</li>
+          <li><strong>Extra Seasoning:</strong> For a richer result, ask for "Edge Cases" or "Negative Scenarios" in your story.</li>
+        </ul>
+      </div>
+    </details>
+  </footer>
+
+  <footer class="site-footer">
+    <span>© 2026 Eugen Rof | <strong>QA Toolset</strong></span>
+    <a href="#" onclick="return false;" style="cursor: default; opacity: 0.6;"><strong>GitHub Source</strong></a>
+  </footer>
+</div>
+
+</body>
+</html>
