@@ -68,8 +68,6 @@ I am a **Senior QA Engineer** and a certified **Professional Scrum Master (PSM I
 If you have suggestions or find this tool helpful in your Sprints, feel free to explore the code or reach out via GitHub.
 
 ---
-*Built for practitioners, by a practitioner.*
+*Making QA testing more efficient through AI.*
 
 Developed by **Eugen Rof** (2026)
-Making QA testing more efficient through AI.
-
