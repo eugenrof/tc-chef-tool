@@ -352,7 +352,7 @@ function renderTable(data: any[]) {
         const steps = tc.checks || [];
         let checksHtml = steps.map((c, i) => `
             <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                <div style="font-size: 0.95rem; margin-bottom: 0.2rem;"><strong>${i+1}. Step:</strong> ${c.step ?? 'N/A'}</div>
+                <div style="font-size: 0.95rem; margin-bottom: 0.2rem;"><strong>${i + 1}. Step:</strong> ${c.step ?? 'N/A'}</div>
                 <div style="font-size: 0.95rem; color: var(--btn-green);"><strong>➔ Expected:</strong> ${c.expected_result ?? 'N/A'}</div>
             </div>
         `).join('');
@@ -360,7 +360,7 @@ function renderTable(data: any[]) {
         html += `
             <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="padding: 1.5rem; vertical-align: top; width: 30%;">
-                    <span style="font-size: 0.75rem; color: var(--primary-accent); font-weight: bold; text-transform: uppercase;">${tc.id ?? 'TC-' + (index+1)}</span>
+                    <span style="font-size: 0.75rem; color: var(--primary-accent); font-weight: bold; text-transform: uppercase;">${tc.id ?? 'TC-' + (index + 1)}</span>
                     <div style="font-weight: 600; margin-top: 0.5rem; line-height: 1.4; color: var(--header-text);">${tc.title ?? 'Untitled TC'}</div>
                 </td>
                 <td style="padding: 1.5rem; vertical-align: top;">
