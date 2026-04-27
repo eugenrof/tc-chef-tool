@@ -1,5 +1,6 @@
 //@ts-nocheck
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { jsPDF } from "jspdf";
 
 /**
  * CONFIGURATION & API HANDLING
@@ -21,6 +22,8 @@ let isGherkinMode = false;
 const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement;
 const generateGherkinBtn = document.getElementById('generateGherkinBtn') as HTMLButtonElement;
 const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement;
+const downloadPdfBtn = document.getElementById('downloadPdfBtn') as HTMLButtonElement;
+const pdfExportContainer = document.getElementById('pdfExportContainer') as HTMLDivElement;
 const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
 const copyBtn = document.getElementById('copyBtn') as HTMLButtonElement;
 const toggleVisibilityBtn = document.getElementById('toggleVisibility') as HTMLDivElement;
@@ -231,6 +234,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 downloadBtn.innerText = "Download CSV";
             }
             downloadBtn.disabled = false;
+            pdfExportContainer.style.display = "flex";
         } catch (e) {
             console.error("Persistence error:", e);
         }
@@ -238,7 +242,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * REFRESH HANDLING: Stop the generation process on refresh/close
+ * REFRESH HANDLING
  */
 window.addEventListener('beforeunload', () => {
     localStorage.removeItem('qa_generated_data');
@@ -267,20 +271,17 @@ async function cookTestCases(mode: 'table' | 'gherkin' = 'table') {
         return;
     }
 
-    // UPDATE DOWNLOAD BUTTON TEXT IMMEDIATELY BASED ON MODE
     downloadBtn.innerText = isGherkinMode ? "Download .feature" : "Download CSV";
+    pdfExportContainer.style.display = "none";
 
     storyInput.style.opacity = "0.5";
     generateBtn.disabled = true;
     generateGherkinBtn.disabled = true;
 
-    const originalBtnText = isGherkinMode ? "Cook Gherkin (BDD)" : "Cook Test Cases";
     const loadingBtnText = isGherkinMode ? "Cooking BDD Script(s)..." : "Heating up the kitchen...";
-
     if (isGherkinMode) generateGherkinBtn.innerText = loadingBtnText;
     else generateBtn.innerText = loadingBtnText;
 
-    // Enhanced Loading UI
     resultsTable.innerHTML = `
         <div class="spinner-container" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 3rem;">
             <div class="spinner"></div>
@@ -303,67 +304,68 @@ async function cookTestCases(mode: 'table' | 'gherkin' = 'table') {
 
     try {
         const genAI = new GoogleGenerativeAI(activeKey);
-
-        // This is the current most-reliable string for AI Studio Free Tier
         const model = genAI.getGenerativeModel(
             { model: "gemini-2.5-flash-lite" },
             { apiVersion: 'v1' }
         );
 
         const prompt = isGherkinMode ?
-            `Context: You are a Senior QA Automation Engineer.
-         Task: Convert the following User Story into Gherkin BDD format.
-         Include: Feature name, Background (if applicable), and multiple Scenarios (Happy Path, Negative Path, Edge Cases).
-         Format: Return a JSON array of strings, where each string is a block of Gherkin code for one scenario.
-         Example: ["Feature: Login\\nScenario: Valid Login...", "Scenario: Invalid Password..."]
-         Return ONLY raw JSON. No markdown.
-         User Story: ${storyInput.value}`
+            `Context: Senior QA Automation Engineer.
+             Task: Convert User Story into Gherkin BDD.
+             Return ONLY raw JSON.
+             Format: JSON array of strings OR a JSON object with "feature", "background", and "scenarios" (array of {name, steps[]}).
+             User Story: ${storyInput.value}`
             :
-            `Context: You are "TC Chef", a Senior QA Engineer.
-         Task: Decompose the following requirements into high-quality manual test cases.
-         Format: Return a JSON array where each object has:
-         - "id": String (e.g., TC-01)
-         - "title": String (Descriptive title)
-         - "checks": Array of objects with "step" and "expected_result" strings.
-         Return ONLY raw JSON. No markdown.
-         User Story: ${storyInput.value}`;
+            `Context: TC Chef, Senior QA Engineer.
+             Task: Decompose requirement into manual test cases.
+             Format: Return JSON array where each object has "id", "title", and "checks" (step/expected_result).
+             User Story: ${storyInput.value}`;
 
         const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-
+        const text = result.response.text();
         const cleanedJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        generatedData = JSON.parse(cleanedJson);
+        const rawData = JSON.parse(cleanedJson);
 
-        // SAVE TO STORAGE ONLY AFTER SUCCESS
+        if (isGherkinMode) {
+            if (!Array.isArray(rawData) && typeof rawData === 'object') {
+                let parts = [];
+                if (rawData.feature) parts.push(`Feature: ${rawData.feature}`);
+                if (rawData.description) parts.push(rawData.description);
+                if (rawData.background) parts.push(`Background:\n  ${rawData.background}`);
+
+                if (Array.isArray(rawData.scenarios)) {
+                    rawData.scenarios.forEach((s: any) => {
+                        let scenarioText = `Scenario: ${s.name || 'Test Scenario'}\n`;
+                        if (Array.isArray(s.steps)) {
+                            scenarioText += s.steps.map(step => `  ${step}`).join('\n');
+                        }
+                        parts.push(scenarioText);
+                    });
+                }
+                generatedData = parts;
+            } else {
+                generatedData = rawData.map((item: any) => {
+                    if (typeof item === 'string') return item;
+                    return item.gherkin || item.scenario || JSON.stringify(item);
+                });
+            }
+        } else {
+            generatedData = rawData;
+        }
+
         localStorage.setItem('qa_generated_data', JSON.stringify(generatedData));
         localStorage.setItem('qa_mode', mode);
 
-        if (isGherkinMode) {
-            renderGherkin(generatedData);
-            // Redundant safety update
-            downloadBtn.innerText = "Download .feature";
-        } else {
-            renderTable(generatedData);
-            // Redundant safety update
-            downloadBtn.innerText = "Download CSV";
-        }
+        if (isGherkinMode) renderGherkin(generatedData);
+        else renderTable(generatedData);
+
         downloadBtn.disabled = false;
+        pdfExportContainer.style.display = "flex";
 
     } catch (error: any) {
         clearInterval(cookingInterval);
-        const isBusy = error.message.includes("503") || error.message.includes("demand");
-
-        resultsTable.innerHTML = `
-            <div style="background: rgba(255, 136, 136, 0.1); border: 1px solid #ff8888; border-radius: 12px; padding: 2rem; text-align: center; margin-top: 2rem;">
-                <div style="font-size: 2.5rem; margin-bottom: 1rem;">${isBusy ? '👨‍🍳 💨' : '⚠️'}</div>
-                <h3 style="color: #ff8888; margin-bottom: 0.5rem;">${isBusy ? 'Kitchen is Overloaded' : 'Cooking Error'}</h3>
-                <p style="color: var(--text-color); font-size: 0.95rem; max-width: 420px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
-                    ${isBusy ? 'Google\'s Gemini 2.5 model is currently experiencing high demand. Please wait a few seconds and try clicking "Cook" again.' : error.message}
-                </p>
-                ${isBusy ? '<button onclick="window.location.reload()" style="background: var(--primary-accent); color: white; border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;">Refresh Page</button>' : ''}
-            </div>`;
+        resultsTable.innerHTML = `<div style="color:#ff8888; text-align:center; padding:2rem;">Cooking Error: ${error.message}</div>`;
     } finally {
         clearInterval(cookingInterval);
         storyInput.style.opacity = "1";
@@ -379,8 +381,7 @@ async function cookTestCases(mode: 'table' | 'gherkin' = 'table') {
  * UI RENDERING
  */
 function renderTable(data: any[]) {
-    let html = `
-        <div style="overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); margin-top: 2.5rem;">
+    let html = `<div style="overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); margin-top: 2.5rem;">
         <table style="width: 100%; border-collapse: collapse; background: var(--table-row-bg);">
             <thead>
                 <tr style="background: var(--table-header-bg); border-bottom: 1px solid var(--border-color);">
@@ -396,57 +397,95 @@ function renderTable(data: any[]) {
             <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
                 <div style="font-size: 0.95rem; margin-bottom: 0.2rem;"><strong>${i + 1}. Step:</strong> ${c.step ?? 'N/A'}</div>
                 <div style="font-size: 0.95rem; color: var(--btn-green);"><strong>➔ Expected:</strong> ${c.expected_result ?? 'N/A'}</div>
-            </div>
-        `).join('');
+            </div>`).join('');
 
-        html += `
-            <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 1.5rem; vertical-align: top; width: 30%;">
-                    <span style="font-size: 0.75rem; color: var(--primary-accent); font-weight: bold; text-transform: uppercase;">${tc.id ?? 'TC-' + (index + 1)}</span>
-                    <div style="font-weight: 600; margin-top: 0.5rem; line-height: 1.4; color: var(--header-text);">${tc.title ?? 'Untitled TC'}</div>
-                </td>
-                <td style="padding: 1.5rem; vertical-align: top;">
-                    ${checksHtml || '<em>No ingredients found for this case.</em>'}
-                </td>
-            </tr>`;
+        html += `<tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 1.5rem; vertical-align: top; width: 30%;">
+                <span style="font-size: 0.75rem; color: var(--primary-accent); font-weight: bold; text-transform: uppercase;">${tc.id ?? 'TC-' + (index + 1)}</span>
+                <div style="font-weight: 600; margin-top: 0.5rem; line-height: 1.4; color: var(--header-text);">${tc.title ?? 'Untitled TC'}</div>
+            </td>
+            <td style="padding: 1.5rem; vertical-align: top;">${checksHtml || '<em>No ingredients found.</em>'}</td>
+        </tr>`;
     });
-
     html += `</tbody></table></div>`;
     resultsTable.innerHTML = html;
 }
 
 function renderGherkin(data: string[]) {
-    let html = `<div style="margin-top: 2.5rem;">`;
-    data.forEach(block => {
-        html += `
-            <pre style="background: var(--card-bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-color); font-family: monospace; overflow-x: auto; margin-bottom: 1rem; white-space: pre-wrap; position: relative;">
-                <code style="color: var(--primary-accent); font-weight: bold;">${block}</code>
-            </pre>`;
-    });
-    html += `</div>`;
-    resultsTable.innerHTML = html;
+    const separator = `\n\n# ----------------------------------\n\n`;
+    const fullGherkin = data.join(separator).trim();
+    resultsTable.innerHTML = `
+        <div class="gherkin-results-wrapper" style="margin-top: 2.5rem;">
+            <div class="gherkin-block" style="background: var(--table-row-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem;">
+                <pre style="margin: 0; white-space: pre-wrap; font-family: 'Fira Code', monospace; color: var(--header-text); line-height: 1.6;"><code>${fullGherkin}</code></pre>
+            </div>
+        </div>`;
 }
 
 /**
- * UTILITIES
+ * EXPORT LOGIC
  */
-function resetPage() {
-    if (confirm("Clear the prep table?")) {
-        localStorage.removeItem('qa_story');
-        localStorage.removeItem('qa_generated_data');
-        localStorage.removeItem('qa_mode');
-        storyInput.value = "";
-        resultsTable.innerHTML = "";
-        generatedData = [];
-        downloadBtn.disabled = true;
-        downloadBtn.innerText = "Download Results";
-        updateCharCount();
+function downloadPdf() {
+    if (generatedData.length === 0) return;
+    const doc = new jsPDF();
+    const now = new Date();
+    const fullTimestamp = `${now.toLocaleDateString()} at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(59, 130, 246);
+    doc.text("TC Chef | Test Case Report", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generated on: ${fullTimestamp}`, 14, 28);
+
+    doc.setDrawColor(203, 213, 225);
+    doc.line(14, 32, 196, 32);
+
+    let y = 45;
+
+    if (isGherkinMode) {
+        doc.setFont("courier", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59);
+        const separator = `\n\n# ------------------------------------------\n\n`;
+        const gherkinText = generatedData.join(separator);
+        const lines = doc.splitTextToSize(gherkinText, 180);
+
+        lines.forEach((line: string) => {
+            if (y > 280) { doc.addPage(); y = 20; }
+            doc.text(line, 14, y);
+            y += 5;
+        });
+    } else {
+        generatedData.forEach(tc => {
+            if (y > 260) { doc.addPage(); y = 20; }
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(30, 41, 59);
+            doc.text(`${tc.id ?? 'TC'}: ${tc.title ?? 'Untitled'}`, 14, y);
+            y += 7;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(51, 65, 85);
+
+            (tc.checks || []).forEach(c => {
+                const stepText = `- Step: ${c.step} | Expected: ${c.expected_result}`;
+                const stepLines = doc.splitTextToSize(stepText, 175);
+                if (y + (stepLines.length * 5) > 285) { doc.addPage(); y = 20; }
+                doc.text(stepLines, 18, y);
+                y += (stepLines.length * 5) + 2;
+            });
+            y += 8;
+        });
     }
+    doc.save(`TC_Chef_Report_${now.toISOString().split('T')[0]}.pdf`);
+    showToast("✓ PDF Report downloaded!");
 }
 
-/**
- * HYBRID DOWNLOAD LOGIC (Handles CSV and .feature)
- */
 function downloadResults() {
     if (generatedData.length === 0) return;
 
@@ -456,7 +495,7 @@ function downloadResults() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `TC_Chef_BDD_${new Date().toISOString().split('T')[0]}.feature`;
+        link.download = `TC_Plan_BDD_${new Date().toISOString().split('T')[0]}.feature`;
         link.click();
         showToast("✓ .feature file exported!");
     } else {
@@ -470,7 +509,6 @@ function downloadResults() {
                 `"${(c.expected_result ?? '').replace(/"/g, '""')}"`
             ].join(","))
         );
-
         const blob = new Blob([[headers.join(","), ...csvContent].join("\n")], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -481,10 +519,25 @@ function downloadResults() {
     }
 }
 
+function resetPage() {
+    if (confirm("Clear the prep table?")) {
+        localStorage.removeItem('qa_story');
+        localStorage.removeItem('qa_generated_data');
+        localStorage.removeItem('qa_mode');
+        storyInput.value = "";
+        resultsTable.innerHTML = "";
+        generatedData = [];
+        downloadBtn.disabled = true;
+        pdfExportContainer.style.display = "none";
+        updateCharCount();
+    }
+}
+
 /**
  * EVENT LISTENERS
  */
 generateBtn.addEventListener('click', () => cookTestCases('table'));
 generateGherkinBtn.addEventListener('click', () => cookTestCases('gherkin'));
 downloadBtn.addEventListener('click', downloadResults);
+downloadPdfBtn.addEventListener('click', downloadPdf);
 resetBtn.addEventListener('click', resetPage);

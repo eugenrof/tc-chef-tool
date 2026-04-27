@@ -25,6 +25,7 @@
 
   /* Toggle/Inverted Logic */
   --toggle-bg: #1e293b;
+  /* Light text for secondary buttons in light mode */
   --toggle-text: #ffffff;
   --summary-bg: rgba(0, 0, 0, 0.08);
 }
@@ -50,6 +51,7 @@
 
   /* Toggle/Inverted Logic */
   --toggle-bg: #f1f5f9;
+  /* Dark text for secondary buttons in dark mode (FIXED CONTRAST) */
   --toggle-text: #1e293b;
   --summary-bg: rgba(0, 0, 0, 0.35);
 }
@@ -225,20 +227,6 @@ header {
   }
 }
 
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.6;
-    transform: scale(0.98);
-  }
-}
-
 /* --- API SETTINGS --- */
 .settings-container {
   width: 100%;
@@ -356,11 +344,6 @@ header {
   flex-wrap: wrap;
 }
 
-.input-header-text {
-  flex: 1;
-  min-width: 200px;
-}
-
 #copyBtn {
   width: 44px;
   height: 44px;
@@ -370,7 +353,6 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
   background: var(--toggle-bg);
   color: var(--toggle-text);
   border-radius: 10px;
@@ -395,6 +377,37 @@ textarea {
 textarea:focus {
   border-color: var(--primary-accent);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* --- GHERKIN RESULTS STYLING --- */
+.gherkin-results-wrapper {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gherkin-block {
+  background: var(--input-bg);
+  padding: 1.8rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.gherkin-block pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-color);
+}
+
+.gherkin-block code {
+  color: var(--primary-accent);
+  font-weight: 600;
 }
 
 /* --- BUTTONS CORE --- */
@@ -456,6 +469,26 @@ button:disabled {
   color: var(--toggle-text);
 }
 
+/* --- GOURMET PDF BUTTON STYLING (FIXED CONTRAST) --- */
+#downloadPdfBtn {
+  border: 2px solid;
+  /* Use the vibrant gradient variables for the border color */
+  border-image: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)) 1;
+  background: var(--app-bg);
+  /* Force text color to be text-color for contrast */
+  color: var(--text-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 700;
+}
+
+#downloadPdfBtn:hover:not(:disabled) {
+  /* On hover, switch to the full gradient background and white text for high contrast */
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: white;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+}
+
 /* --- FOOTER --- */
 .site-footer {
   margin-top: 2rem;
@@ -480,33 +513,27 @@ button:disabled {
     padding: 1.5rem;
   }
 
-  header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  /* --- ICON ONLY THEME TOGGLE FOR MOBILE --- */
+  /* THEME TOGGLE: Matching Copy Button Style */
   #themeToggle {
     width: 44px !important;
+    /* Match the 44px height */
     min-width: 44px !important;
     max-width: 44px !important;
-    flex: 0 0 44px !important;
-    padding: 0;
+    padding: 0 !important;
+    /* Remove side padding to center emoji */
     border-radius: 10px;
+    /* Match the copyBtn border-radius */
     margin-left: auto;
+    /* Keep it aligned to the right */
+    overflow: hidden;
   }
 
+  /* Hide the text so only the emoji/icon shows */
   .theme-text {
-    display: none;
+    display: none !important;
   }
 
-  .theme-icon {
-    margin: 0;
-  }
-
-  .api-input-group,
-  .input-label-row {
+  .api-input-group {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
@@ -515,15 +542,6 @@ button:disabled {
   #saveKeyBtn {
     width: 100%;
     flex: none;
-  }
-
-  #copyBtn {
-    margin-left: auto;
-  }
-
-  .app-description {
-    padding-left: 0;
-    text-align: left;
   }
 
   .controls {
