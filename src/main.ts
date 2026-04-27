@@ -13,11 +13,13 @@ function getActiveApiKey() {
 }
 
 let generatedData: any[] = [];
+let isGherkinMode = false;
 
 /**
  * DOM ELEMENTS
  */
 const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement;
+const generateGherkinBtn = document.getElementById('generateGherkinBtn') as HTMLButtonElement;
 const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement;
 const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
 const copyBtn = document.getElementById('copyBtn') as HTMLButtonElement;
@@ -47,7 +49,15 @@ themeToggle.addEventListener('click', () => {
 });
 
 function updateThemeButton(theme: string) {
-    themeToggle.innerText = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    const iconEl = themeToggle.querySelector('.theme-icon');
+    const textEl = themeToggle.querySelector('.theme-text');
+
+    if (iconEl && textEl) {
+        iconEl.textContent = theme === 'dark' ? '☀️' : '🌙';
+        textEl.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    } else {
+        themeToggle.innerText = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
 }
 
 /**
@@ -63,7 +73,9 @@ function updateCharCount() {
         wordCounter.classList.remove('limit-reached');
     }
 
-    generateBtn.disabled = charCount === 0;
+    const isEmpty = charCount === 0;
+    generateBtn.disabled = isEmpty;
+    generateGherkinBtn.disabled = isEmpty;
 }
 
 /**
@@ -143,7 +155,7 @@ toggleVisibilityBtn.addEventListener('click', () => {
 });
 
 /**
- * API KEY MANAGEMENT (With Corrected Validation)
+ * API KEY MANAGEMENT
  */
 saveKeyBtn.addEventListener('click', async () => {
     const key = userApiKeyInput.value.trim();
@@ -200,6 +212,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const savedStory = localStorage.getItem('qa_story');
     const savedData = localStorage.getItem('qa_generated_data');
+    const savedMode = localStorage.getItem('qa_mode');
 
     if (savedStory) {
         storyInput.value = savedStory;
@@ -208,13 +221,28 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (savedData) {
         try {
+            isGherkinMode = savedMode === 'gherkin';
             generatedData = JSON.parse(savedData);
-            renderTable(generatedData);
+            if (isGherkinMode) {
+                renderGherkin(generatedData);
+                downloadBtn.innerText = "Download .feature";
+            } else {
+                renderTable(generatedData);
+                downloadBtn.innerText = "Download CSV";
+            }
             downloadBtn.disabled = false;
         } catch (e) {
             console.error("Persistence error:", e);
         }
     }
+});
+
+/**
+ * REFRESH HANDLING: Stop the generation process on refresh/close
+ */
+window.addEventListener('beforeunload', () => {
+    localStorage.removeItem('qa_generated_data');
+    localStorage.removeItem('qa_mode');
 });
 
 storyInput.addEventListener('input', () => {
@@ -225,8 +253,9 @@ storyInput.addEventListener('input', () => {
 /**
  * TC CHEF GENERATION LOGIC
  */
-async function cookTestCases() {
+async function cookTestCases(mode: 'table' | 'gherkin' = 'table') {
     const activeKey = getActiveApiKey();
+    isGherkinMode = mode === 'gherkin';
 
     if (!activeKey) {
         alert("Chef needs an API Key to start the stove!");
@@ -238,21 +267,31 @@ async function cookTestCases() {
         return;
     }
 
+    // UPDATE DOWNLOAD BUTTON TEXT IMMEDIATELY BASED ON MODE
+    downloadBtn.innerText = isGherkinMode ? "Download .feature" : "Download CSV";
+
     storyInput.style.opacity = "0.5";
     generateBtn.disabled = true;
-    generateBtn.innerText = "Heating up the kitchen...";
+    generateGherkinBtn.disabled = true;
 
-    // DYNAMIC LOADING MESSAGES
+    const originalBtnText = isGherkinMode ? "Cook Gherkin (BDD)" : "Cook Test Cases";
+    const loadingBtnText = isGherkinMode ? "Cooking BDD Script(s)..." : "Heating up the kitchen...";
+
+    if (isGherkinMode) generateGherkinBtn.innerText = loadingBtnText;
+    else generateBtn.innerText = loadingBtnText;
+
+    // Enhanced Loading UI
     resultsTable.innerHTML = `
-        <div class="spinner-container" style="margin-top: 2.5rem;">
+        <div class="spinner-container" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 3rem;">
             <div class="spinner"></div>
-            <p id="loadingMsg" class="loading-text" style="font-weight: 600; color: var(--primary-accent);">
-                Gathering ingredients...
-            </p>
+            <div id="loadingStatus" style="text-align: center; animation: pulse 2s infinite ease-in-out;">
+                <p id="loadingMsg" style="font-weight: 700; color: var(--primary-accent); font-size: 1.2rem; margin: 0;">Gathering ingredients...</p>
+                <p style="font-size: 0.85rem; color: var(--sub-text); margin-top: 0.4rem;">The AI kitchen is prepping your tests</p>
+            </div>
         </div>`;
 
     const loadingMsg = document.getElementById('loadingMsg');
-    const messages = ["Gathering ingredients...", "Preparing the TC Soup...", "Simmering with GenAI..."];
+    const messages = ["Gathering ingredients...", "Preparing the TC Soup...", "Simmering with GenAI...", "Plating the results..."];
     let msgIdx = 0;
 
     const cookingInterval = setInterval(() => {
@@ -264,22 +303,30 @@ async function cookTestCases() {
 
     try {
         const genAI = new GoogleGenerativeAI(activeKey);
+
+        // This is the current most-reliable string for AI Studio Free Tier
         const model = genAI.getGenerativeModel(
-            { model: "gemini-2.5-flash" },
+            { model: "gemini-2.5-flash-lite" },
             { apiVersion: 'v1' }
         );
 
-        const prompt = `
-            Context: You are "TC Chef", a Senior QA Engineer.
-            Task: Decompose the following requirements into high-quality test cases.
-            Format: Return a JSON array where each object has:
-            - "id": String (e.g., TC-01)
-            - "title": String (Descriptive title)
-            - "checks": Array of objects with "step" and "expected_result" strings.
-            
-            Return ONLY raw JSON. Do not wrap in markdown tags.
-            User Story: ${storyInput.value}
-        `;
+        const prompt = isGherkinMode ?
+            `Context: You are a Senior QA Automation Engineer.
+         Task: Convert the following User Story into Gherkin BDD format.
+         Include: Feature name, Background (if applicable), and multiple Scenarios (Happy Path, Negative Path, Edge Cases).
+         Format: Return a JSON array of strings, where each string is a block of Gherkin code for one scenario.
+         Example: ["Feature: Login\\nScenario: Valid Login...", "Scenario: Invalid Password..."]
+         Return ONLY raw JSON. No markdown.
+         User Story: ${storyInput.value}`
+            :
+            `Context: You are "TC Chef", a Senior QA Engineer.
+         Task: Decompose the following requirements into high-quality manual test cases.
+         Format: Return a JSON array where each object has:
+         - "id": String (e.g., TC-01)
+         - "title": String (Descriptive title)
+         - "checks": Array of objects with "step" and "expected_result" strings.
+         Return ONLY raw JSON. No markdown.
+         User Story: ${storyInput.value}`;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -288,47 +335,42 @@ async function cookTestCases() {
         const cleanedJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
         generatedData = JSON.parse(cleanedJson);
-        localStorage.setItem('qa_generated_data', JSON.stringify(generatedData));
 
-        renderTable(generatedData);
+        // SAVE TO STORAGE ONLY AFTER SUCCESS
+        localStorage.setItem('qa_generated_data', JSON.stringify(generatedData));
+        localStorage.setItem('qa_mode', mode);
+
+        if (isGherkinMode) {
+            renderGherkin(generatedData);
+            // Redundant safety update
+            downloadBtn.innerText = "Download .feature";
+        } else {
+            renderTable(generatedData);
+            // Redundant safety update
+            downloadBtn.innerText = "Download CSV";
+        }
         downloadBtn.disabled = false;
 
     } catch (error: any) {
         clearInterval(cookingInterval);
-        console.error("Kitchen Error:", error);
-
-        let friendlyHeader = "The kitchen is closed";
-        let friendlyMessage = error.message;
-
-        // FRIENDLIER QUOTA ERROR (429)
-        if (error.message.includes("429") || error.message.toLowerCase().includes("quota")) {
-            friendlyHeader = "⏳ Daily Limit Reached (Resets Tomorrow)";
-            friendlyMessage = `
-                TC Chef has finished all free orders for today.<br><br>
-                • <strong>Wait:</strong> The kitchen reopens in 24 hours.<br>
-                • <strong>Personal Key:</strong> Add your own key at <a href="https://aistudio.google.com/" target="_blank" style="color: var(--primary-accent); text-decoration: underline;">AI Studio</a> for a higher personal allowance.
-            `;
-        }
+        const isBusy = error.message.includes("503") || error.message.includes("demand");
 
         resultsTable.innerHTML = `
-            <div class="error-container" style="
-                margin-top: 2.5rem; 
-                color: #ff8888; 
-                padding: 2rem; 
-                text-align: center; 
-                border: 1px solid var(--border-color); 
-                border-radius: 12px; 
-                background: rgba(255,0,0,0.05);
-                overflow-wrap: break-word;
-            ">
-                <strong style="display: block; margin-bottom: 0.8rem; font-size: 1.1rem;">${friendlyHeader}</strong>
-                <div style="font-size: 0.9rem; line-height: 1.6; opacity: 0.9;">${friendlyMessage}</div>
+            <div style="background: rgba(255, 136, 136, 0.1); border: 1px solid #ff8888; border-radius: 12px; padding: 2rem; text-align: center; margin-top: 2rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">${isBusy ? '👨‍🍳 💨' : '⚠️'}</div>
+                <h3 style="color: #ff8888; margin-bottom: 0.5rem;">${isBusy ? 'Kitchen is Overloaded' : 'Cooking Error'}</h3>
+                <p style="color: var(--text-color); font-size: 0.95rem; max-width: 420px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
+                    ${isBusy ? 'Google\'s Gemini 2.5 model is currently experiencing high demand. Please wait a few seconds and try clicking "Cook" again.' : error.message}
+                </p>
+                ${isBusy ? '<button onclick="window.location.reload()" style="background: var(--primary-accent); color: white; border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;">Refresh Page</button>' : ''}
             </div>`;
     } finally {
         clearInterval(cookingInterval);
         storyInput.style.opacity = "1";
         generateBtn.disabled = false;
+        generateGherkinBtn.disabled = false;
         generateBtn.innerText = "Cook Test Cases";
+        generateGherkinBtn.innerText = "Cook Gherkin (BDD)";
         updateCharCount();
     }
 }
@@ -373,46 +415,76 @@ function renderTable(data: any[]) {
     resultsTable.innerHTML = html;
 }
 
+function renderGherkin(data: string[]) {
+    let html = `<div style="margin-top: 2.5rem;">`;
+    data.forEach(block => {
+        html += `
+            <pre style="background: var(--card-bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-color); font-family: monospace; overflow-x: auto; margin-bottom: 1rem; white-space: pre-wrap; position: relative;">
+                <code style="color: var(--primary-accent); font-weight: bold;">${block}</code>
+            </pre>`;
+    });
+    html += `</div>`;
+    resultsTable.innerHTML = html;
+}
+
 /**
  * UTILITIES
  */
 function resetPage() {
-    if (confirm("Clear the prep table? This will toss out your current User Story and all cooked test cases, but your API key will be kept on the shelf.")) {
+    if (confirm("Clear the prep table?")) {
         localStorage.removeItem('qa_story');
         localStorage.removeItem('qa_generated_data');
+        localStorage.removeItem('qa_mode');
         storyInput.value = "";
         resultsTable.innerHTML = "";
         generatedData = [];
         downloadBtn.disabled = true;
+        downloadBtn.innerText = "Download Results";
         updateCharCount();
     }
 }
 
-function downloadCSV() {
+/**
+ * HYBRID DOWNLOAD LOGIC (Handles CSV and .feature)
+ */
+function downloadResults() {
     if (generatedData.length === 0) return;
-    const headers = ["TCID", "Title", "Step Number", "Action", "Expected Result"];
-    const csvContent = generatedData.flatMap(tc =>
-        (tc.checks || []).map((c, i) => [
-            `"${(tc.id ?? 'N/A').toString().replace(/"/g, '""')}"`,
-            `"${(tc.title ?? '').replace(/"/g, '""')}"`,
-            i + 1,
-            `"${(c.step ?? '').replace(/"/g, '""')}"`,
-            `"${(c.expected_result ?? '').replace(/"/g, '""')}"`
-        ].join(","))
-    );
 
-    const blob = new Blob([[headers.join(","), ...csvContent].join("\n")], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `TC_AI_Export_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    showToast("✓ CSV Export successful!");
+    if (isGherkinMode) {
+        const gherkinText = generatedData.join('\n\n');
+        const blob = new Blob([gherkinText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `TC_Chef_BDD_${new Date().toISOString().split('T')[0]}.feature`;
+        link.click();
+        showToast("✓ .feature file exported!");
+    } else {
+        const headers = ["TCID", "Title", "Step Number", "Action", "Expected Result"];
+        const csvContent = generatedData.flatMap(tc =>
+            (tc.checks || []).map((c, i) => [
+                `"${(tc.id ?? 'N/A').toString().replace(/"/g, '""')}"`,
+                `"${(tc.title ?? '').replace(/"/g, '""')}"`,
+                i + 1,
+                `"${(c.step ?? '').replace(/"/g, '""')}"`,
+                `"${(c.expected_result ?? '').replace(/"/g, '""')}"`
+            ].join(","))
+        );
+
+        const blob = new Blob([[headers.join(","), ...csvContent].join("\n")], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `TC_Chef_Export_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        showToast("✓ CSV Export successful!");
+    }
 }
 
 /**
  * EVENT LISTENERS
  */
-generateBtn.addEventListener('click', cookTestCases);
-downloadBtn.addEventListener('click', downloadCSV);
+generateBtn.addEventListener('click', () => cookTestCases('table'));
+generateGherkinBtn.addEventListener('click', () => cookTestCases('gherkin'));
+downloadBtn.addEventListener('click', downloadResults);
 resetBtn.addEventListener('click', resetPage);
