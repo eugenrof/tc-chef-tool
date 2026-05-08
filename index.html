@@ -51,13 +51,12 @@
         <div class="tips-content"
           style="padding: 1rem; font-size: 0.9rem; line-height: 1.6; background: var(--summary-bg); border-radius: 8px; margin-top: 0.5rem;">
           <ul style="margin: 0; padding-left: 1.2rem;">
-            <li><strong>Gemini Special:</strong> Get your own free API key at <a
+            <li><strong>Daily Specials:</strong> Shared keys serve 20 orders/day. Bring your own key for a 1,500 req/day
+              feast.</li>
+            <li><strong>Chef's License:</strong> Grab your own free API key at <a
                 href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.</li>
-            <li><strong>OpenAI Special:</strong> Use ChatGPT's brain. Get your API key at <a
-                href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>.</li>
-            <li><strong>AWS Special:</strong> Requires Amazon Bedrock access. Use an IAM user with
-              `AmazonBedrockFullAccess`.</li>
-            <li><strong>Secret Recipe:</strong> All keys are stored safely in your browser's LocalStorage.</li>
+            <li><strong>Secret Recipe:</strong> Your keys are stored safely in your own browser's pantry (LocalStorage).
+            </li>
             <li><strong>Extra Seasoning:</strong> For a richer result, ask for "Edge Cases" or "Negative Scenarios" in
               your story.</li>
           </ul>
@@ -67,68 +66,28 @@
 
     <div class="settings-container">
       <div class="settings-header">
-        <label>Kitchen Pantry (API Settings)</label>
-      </div>
-
-      <div class="provider-toggle-container">
-        <div class="provider-option">
-          <input type="radio" id="geminiRadio" name="provider" value="gemini" checked>
-          <label class="provider-label" for="geminiRadio">♊ Gemini 2.5</label>
-        </div>
-        <div class="provider-option">
-          <input type="radio" id="openaiRadio" name="provider" value="openai">
-          <label class="provider-label" for="openaiRadio">🤖 ChatGPT</label>
-        </div>
-        <div class="provider-option">
-          <input type="radio" id="awsRadio" name="provider" value="aws">
-          <label class="provider-label" for="awsRadio">☁️ Amazon Q</label>
+        <label>Gemini API Configuration</label>
+        <div class="tooltip-trigger"
+          data-tooltip="The shared key is limited to 20 req/day. For unlimited use, get your own free key at aistudio.google.com. Keys are stored safely in your browser's local storage.">
+          ⓘ
         </div>
       </div>
 
-      <!-- Gemini Pantry -->
-      <div id="geminiPantry">
-        <div class="api-input-group">
-          <div class="api-input-wrapper">
-            <input type="password" id="userApiKey" placeholder="Enter Gemini API Key...">
-            <div id="toggleVisibility" class="eye-toggle">
-              <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </div>
-          </div>
-          <button id="saveKeyBtn" class="secondary-btn">Save Key</button>
-        </div>
-      </div>
+      <div class="api-input-group">
+        <div class="api-input-wrapper" style="position: relative; flex: 1; display: flex; align-items: center;">
+          <input type="password" id="userApiKey" placeholder="Paste your Gemini API key here..."
+            style="padding-right: 40px; width: 100%;">
 
-      <!-- OpenAI Pantry (Now mirroring Gemini Structure) -->
-      <div id="openaiPantry" style="display: none;">
-        <div class="api-input-group">
-          <div class="api-input-wrapper">
-            <input type="password" id="openaiApiKey" placeholder="Enter OpenAI API Key (sk-...)">
+          <div id="toggleVisibility" title="Show/Hide API Key"
+            style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; color: var(--sub-text); transition: color 0.2s; user-select: none;">
+            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
           </div>
-          <button id="saveOpenAIKeyBtn" class="secondary-btn">Save Key</button>
         </div>
-      </div>
-
-      <!-- AWS Pantry -->
-      <div id="awsPantry" style="display: none;">
-        <div class="aws-pantry-grid">
-          <div class="aws-field-group">
-            <label>Access Key ID</label>
-            <input type="text" id="awsAccessKey" class="aws-input" placeholder="Input Access Key ID...">
-          </div>
-          <div class="aws-field-group">
-            <label>Secret Access Key</label>
-            <input type="password" id="awsSecretKey" class="aws-input" placeholder="Secret...">
-          </div>
-          <div class="aws-field-group">
-            <label>Region</label>
-            <input type="text" id="awsRegion" class="aws-input" placeholder="us-east-1">
-          </div>
-          <button id="saveAwsKeyBtn">Save AWS</button>
-        </div>
+        <button id="saveKeyBtn" class="secondary-btn">Save Key</button>
       </div>
       <p id="keyStatus"></p>
     </div>
@@ -141,7 +100,9 @@
           <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--sub-text);">Season with Acceptance Criteria for
             perfectly cooked results.</p>
         </div>
-        <button id="copyBtn" class="secondary-btn icon-only" title="Copy User Story to Clipboard">
+
+        <button id="copyBtn" class="secondary-btn icon-only" title="Copy User Story to Clipboard"
+          aria-label="Copy to Clipboard">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -152,6 +113,7 @@
 
       <textarea id="storyInput" maxlength="2500"
         placeholder="Provide a User Story and Acceptance Criteria. Fresh test cases, cooked to order!"></textarea>
+
       <div id="wordCounter" style="text-align: right; font-size: 0.8rem; color: var(--sub-text); margin-top: 8px;">0 /
         2500</div>
 
@@ -159,7 +121,7 @@
         <button id="generateBtn">Cook Test Cases</button>
         <button id="generateGherkinBtn" class="secondary-btn">Cook Gherkin (BDD)</button>
         <button id="resetBtn" class="secondary-btn">Clear Prep Table</button>
-        <button id="downloadBtn" disabled>Download CSV</button>
+        <button id="downloadBtn" disabled title="Generate cases first to enable download">Download CSV</button>
       </div>
     </section>
 
@@ -168,7 +130,7 @@
     <div id="pdfExportContainer"
       style="display: none; justify-content: center; margin: 3rem 0; padding-top: 2rem; border-top: 1px dashed var(--border-color);">
       <button id="downloadPdfBtn" class="secondary-btn"
-        style="padding: 12px 40px; font-weight: 700; border: 2px solid var(--primary-accent);">
+        style="padding: 12px 40px; font-weight: 700; border: 2px solid var(--primary-accent); letter-spacing: 0.5px;">
         💾 Export Test Plan (PDF)
       </button>
     </div>
