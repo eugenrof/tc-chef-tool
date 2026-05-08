@@ -482,7 +482,7 @@ function downloadPdf() {
             y += 8;
         });
     }
-    doc.save(`TC_Chef_Report_${now.toISOString().split('T')[0]}.pdf`);
+    doc.save(`TC_Test_Plan_Report_${now.toISOString().split('T')[0]}.pdf`);
     showToast("✓ PDF Report downloaded!");
 }
 
