@@ -16,8 +16,10 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1038.0",
     "@google/generative-ai": "^0.24.1",
     "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.7"
+    "jspdf-autotable": "^5.0.7",
+    "openai": "^6.34.0"
   }
 }

@@ -25,9 +25,12 @@
 
   /* Toggle/Inverted Logic */
   --toggle-bg: #1e293b;
-  /* Light text for secondary buttons in light mode */
   --toggle-text: #ffffff;
   --summary-bg: rgba(0, 0, 0, 0.08);
+
+  /* Amazon Specifics */
+  --amazon-orange: #ff9900;
+  --amazon-squid: #232f3e;
 }
 
 [data-theme="dark"] {
@@ -51,7 +54,6 @@
 
   /* Toggle/Inverted Logic */
   --toggle-bg: #f1f5f9;
-  /* Dark text for secondary buttons in dark mode (FIXED CONTRAST) */
   --toggle-text: #1e293b;
   --summary-bg: rgba(0, 0, 0, 0.35);
 }
@@ -116,6 +118,98 @@ a:hover {
   border: 1px solid var(--border-color);
   box-shadow: var(--glass-shadow);
   overflow: hidden;
+}
+
+/* --- PROVIDER SELECTOR --- */
+.provider-toggle-container {
+  display: flex;
+  background: var(--summary-bg);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
+  gap: 4px;
+}
+
+.provider-option {
+  flex: 1;
+  position: relative;
+}
+
+.provider-option input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.provider-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sub-text);
+  transition: all 0.2s ease;
+  gap: 8px;
+}
+
+.provider-option input:checked+.provider-label {
+  background: var(--app-bg);
+  color: var(--primary-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* --- AWS PANTRY GRID --- */
+.aws-pantry-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 1fr 130px;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.aws-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aws-field-group label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sub-text);
+  margin-left: 4px;
+}
+
+.aws-input {
+  width: 100%;
+  padding: 10px 14px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+}
+
+.aws-input:focus {
+  border-color: var(--amazon-orange);
+  outline: none;
+  background: rgba(255, 153, 0, 0.05);
+}
+
+#saveAwsKeyBtn {
+  background: var(--amazon-squid);
+  color: white;
+  border: none;
+  height: 44px;
 }
 
 /* --- CHEF BRANDED HEADER --- */
@@ -187,7 +281,7 @@ header {
   font-size: 1.1rem;
 }
 
-/* --- LOADING SPINNER & ANIMATIONS --- */
+/* --- LOADING SPINNER --- */
 .spinner-container {
   display: flex;
   flex-direction: column;
@@ -211,13 +305,6 @@ header {
   color: var(--primary-accent);
   font-size: 1.2rem;
   margin: 0;
-  text-align: center;
-}
-
-.loading-subtext {
-  font-size: 0.85rem;
-  color: var(--sub-text);
-  margin-top: 0.4rem;
   text-align: center;
 }
 
@@ -264,7 +351,9 @@ header {
   align-items: center;
 }
 
-#userApiKey {
+/* Combined styling for Gemini and OpenAI inputs */
+#userApiKey,
+#openaiApiKey {
   width: 100%;
   padding: 10px 40px 10px 14px;
   height: 44px;
@@ -283,10 +372,13 @@ header {
   user-select: none;
 }
 
-#saveKeyBtn {
+/* Unified width for Save buttons */
+#saveKeyBtn,
+#saveOpenAIKeyBtn {
   width: 130px;
   min-width: 130px;
   flex: 0 0 130px;
+  height: 44px;
 }
 
 /* --- TOOLTIPS --- */
@@ -393,7 +485,6 @@ textarea:focus {
   border-radius: 16px;
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease;
 }
 
 .gherkin-block pre {
@@ -403,11 +494,6 @@ textarea:focus {
   font-size: 0.95rem;
   line-height: 1.7;
   color: var(--text-color);
-}
-
-.gherkin-block code {
-  color: var(--primary-accent);
-  font-weight: 600;
 }
 
 /* --- BUTTONS CORE --- */
@@ -469,24 +555,19 @@ button:disabled {
   color: var(--toggle-text);
 }
 
-/* --- GOURMET PDF BUTTON STYLING (FIXED CONTRAST) --- */
 #downloadPdfBtn {
   border: 2px solid;
-  /* Use the vibrant gradient variables for the border color */
   border-image: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)) 1;
   background: var(--app-bg);
-  /* Force text color to be text-color for contrast */
   color: var(--text-color);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 700;
 }
 
 #downloadPdfBtn:hover:not(:disabled) {
-  /* On hover, switch to the full gradient background and white text for high contrast */
   background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   color: white;
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
 }
 
 /* --- FOOTER --- */
@@ -506,6 +587,14 @@ button:disabled {
   .controls {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .aws-pantry-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #saveAwsKeyBtn {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 600px) {
@@ -513,22 +602,12 @@ button:disabled {
     padding: 1.5rem;
   }
 
-  /* THEME TOGGLE: Matching Copy Button Style */
   #themeToggle {
     width: 44px !important;
-    /* Match the 44px height */
     min-width: 44px !important;
-    max-width: 44px !important;
     padding: 0 !important;
-    /* Remove side padding to center emoji */
-    border-radius: 10px;
-    /* Match the copyBtn border-radius */
-    margin-left: auto;
-    /* Keep it aligned to the right */
-    overflow: hidden;
   }
 
-  /* Hide the text so only the emoji/icon shows */
   .theme-text {
     display: none !important;
   }
@@ -539,18 +618,25 @@ button:disabled {
     gap: 10px;
   }
 
-  #saveKeyBtn {
-    width: 100%;
-    flex: none;
+  #saveKeyBtn,
+  #saveOpenAIKeyBtn {
+    width: 100% !important;
+    flex: none !important;
+    height: 44px !important;
+  }
+
+  .aws-pantry-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  #saveAwsKeyBtn {
+    grid-column: span 1;
+    width: 100% !important;
+    height: 44px !important;
   }
 
   .controls {
     grid-template-columns: 1fr;
-  }
-
-  .site-footer {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
   }
 }
