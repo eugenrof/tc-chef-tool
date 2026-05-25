@@ -63,9 +63,7 @@ tc-chef-tool/
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📝 About the Author
-I am a **Senior QA Engineer** and a certified **Professional Scrum Master (PSM I & PSM II)**, with a passion for testing & building tools that enhance team agility and transparency. This project was born out of a personal need and is shared freely for the Agile community.
-
-If you have suggestions or find this tool helpful in your Sprints, feel free to explore the code or reach out via GitHub.
+I am a **Senior QA Engineer** and a certified **Professional Scrum Master (PSM I & PSM II)**, with a passion for testing & building tools that enhance team agility and transparency.
 
 ---
 *Making QA testing more efficient through AI.*
