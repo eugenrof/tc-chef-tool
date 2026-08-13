@@ -1,0 +1,25 @@
+{
+  "name": "tc-chef-tool",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1038.0",
+    "@google/generative-ai": "^0.24.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
+    "openai": "^6.34.0"
+  }
+}
