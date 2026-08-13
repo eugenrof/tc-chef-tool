@@ -305,7 +305,7 @@ async function cookTestCases(mode: 'table' | 'gherkin' = 'table') {
     try {
         const genAI = new GoogleGenerativeAI(activeKey);
         const model = genAI.getGenerativeModel(
-            { model: "gemini-2.5-flash-lite" },
+            { model: "gemini-3.5-flash-lite" },
             { apiVersion: 'v1' }
         );
 
